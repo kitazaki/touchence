@@ -1,0 +1,80 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://obniz.io/js/jquery-3.2.1.min.js"></script>
+  <script src="https://unpkg.com/obniz@2.0.1/obniz.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<div id="obniz-debug"></div>
+<h1>obniz instant html</h1>
+<button id="on">ON</button>
+<button id="off">OFF</button>
+<div id="print"></div>
+
+<script>
+var obniz = new Obniz("OBNIZ_ID_HERE");
+obniz.onconnect = async function () {
+
+  obniz.display.clear();
+
+  obniz.io11.output(false); // GND
+  obniz.io10.output(true);  // VDD(5V)
+  
+  var led = obniz.wired("WS2812B", {gnd:2, vcc: 1, din: 0});
+  var colors = [];
+  var r = [];
+  var g = [];
+  var b = [];
+  var s_flag = [];
+
+  for (var i=0; i<85; i++) {
+    colors[i]=([0, 0, 0]);
+  }
+  led.rgbs(colors);
+  
+  obniz.switch.onchange = function(state) {
+    $('#print').text(state);
+    obniz.display.clear();
+    obniz.display.print(state);
+  }  
+  
+  $('#on').click(async function () {
+    obniz.display.clear();
+    obniz.display.print("ON");
+    s_flag = 0;
+    obniz.uart0.start({tx: 8, rx: 9, baud:57600});
+    while(1){
+      obniz.uart0.send(0x6D);
+      obniz.uart0.onreceive = function(data, text) {
+        console.log(data[1] + "," + data[3] + "," + data[5] + "," + data[7]);
+        for (var i=0; i<80; i++) {
+          if (data[1] > 10) {r = data[1];} else {r = 1;}
+          if (data[3] > 10) {g = data[3];} else {g = 1;}
+          if (data[5] > 10) {b = data[5];} else {b = 1;}
+          colors[i]=([r, g, b]);
+        }
+      }
+      led.rgbs(colors);
+      await obniz.wait(100);
+      if (s_flag) break;
+    }
+  });
+
+  $('#off').click(async function () {
+    obniz.display.clear();
+    obniz.display.print("OFF");
+    for (var i=0; i<80; i++) {
+      colors[i]=([0, 0, 0]);
+    }
+    led.rgbs(colors);
+    s_flag = 1;
+    await obniz.wait(100);
+    obniz.uart0.end();
+  });
+}
+
+</script>
+</body>
+</html>
