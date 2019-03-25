@@ -24,7 +24,7 @@ void setup() {
   NefryDisplay.drawString(0, 48, "CH4: ");
   NefryDisplay.display();
   Serial.begin(115200);
-  Serial1.begin(57600, SERIAL_8N1, 23, 18);  // (speed, type, RX:D2=23, TX:D4=18);
+  Serial1.begin(57600, SERIAL_8N1, 23, 19);  // (speed, type, RX:D2=23, TX:D3=19);
   delay(1000);
   Serial.println("start: ");
 }
